@@ -13,6 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+import ssl
 import datetime
 
 
@@ -198,6 +199,99 @@ class MoviesAPI(APIView):
             "address": "HCM",
         }})
 
+class NumberLuckySouthAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://ketquaveso.mobi/xsmn-6-8-2023.html"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        content  = soup.find("div", id= "load_kq_mn_0")
+        test  = content.find_all("tr")
+        th = content.find_all("th")
+        header = []
+        for h in th[1:4]:
+            header.append(h.text.strip())
+        rs.append(header)
+        for i in test[1:10]:
+            td = i.find_all("td")
+            row = []           
+            for j in td:
+                fields = j.find_all("div")
+                for k in fields:
+                    row.append(k.text.strip())
+            rs.append(row)
+            row = []
+        # print(rs)
+        return  Response({"data" : rs})
+
+class NumberLuckyNorthAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://ketquaveso.mobi/xsmb-8-8-2023.html"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        content  = soup.find("table", class_= "kqmb colgiai extendable")
+        test  = content.find_all("tr")
+        for i in test[1:]:
+            td = i.find_all("td")
+            row = []           
+            for j in td:
+                fields = j.find_all("span")
+                for k in fields:
+                    row.append(k.text.strip())
+            rs.append(row)
+            row = []
+        # print(rs)
+        return  Response({"data" : rs})
+
+class PriceGoldAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        url = "https://www.24h.com.vn/gia-vang-hom-nay-c425.html?d=2023-08-09"
+        html  = requests.get(url)
+        
+        soup = BeautifulSoup(html.text, 'html.parser')
+        content  = soup.find("div", id= "container_tin_gia_vang")
+        table = content.find("div", class_ = "tabBody")
+        test  = table.find_all("tr")
+        for i in test[1:]:
+            td = i.find_all("td")
+            row = []           
+            for j in td:
+                row.append(j.text.strip())
+            rs.append(row)
+            row = []
+        # print(rs)
+        return  Response({"data" : rs})
+class PriceDollarsAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        url = "https://www.24h.com.vn/ty-gia-ngoai-te-ttcb-c426.html?d=2023-08-31"
+        html  = requests.get(url)
+        soup = BeautifulSoup(html.text, 'html.parser')
+        content  = soup.find("table", class_= "gia-vang-search-data-table")
+        test  = content.find_all("tr")
+        for i in test[1:]:
+            td = i.find_all("td")
+            row = []           
+            for j in td:
+                row.append(j.text.strip())
+            rs.append(row)
+            row = []
+        # print(rs)
+        return  Response({"data" : rs})
 
 class Home(APIView):
     permission_classes = [AllowAny]
@@ -216,23 +310,42 @@ class ScrapeDataView(APIView):
 
     def get(self, request, *args, **kwargs):
         rs = []
-        url = "https://moveek.com"  # Replace this with your actual URL
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://www.netflix.com/vn-en/browse/genre/34399"  # Replace this with your actual URL
         response = requests.get(url, verify=True) 
         print(response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
-        # print(soup)
-        
-        content  = soup.find_all("div", class_ = "bg-white border-top border-bottom mt-3 pt-4")
-        print(content)
-        items = content.find("div", class_ = "col item")
+        genre = {
+            "title" : "",
+            "movies" : []
+        }
 
-        print(items)
-        for i in items[:5]:
-            print(i)
-            # rs.append({
-            #     "name" : i.find("dl", class_ = "list_text").find("a").text,
-            #     "href" : i.find("a")["href"],
-            #     "img" : i.find("img")["src"]
-            # })
-        # print(rs)
-        return  Response({"data" : "rs"})
+        content  = soup.find_all("section", class_= "nm-collections-row")
+        for i in content[:-2]:
+            genre["title"] = i.find("h2", class_ = "nm-collections-row-name").text.strip()
+            content  = i.find("ul", class_= "nm-content-horizontal-row-item-container")
+            test  = content.find_all("li")
+            for i in test[1:]:
+                genre['movies'].append({
+                    "name" : i.find("span", class_ = "nm-collections-title-name").text.strip(),
+                    "image" : i.find("img")["src"],
+                    "href" : i.find("a")["href"]
+                })
+                # detail = requests.get(i.find("a")["href"])
+                # soup = BeautifulSoup(detail.text, 'html.parser')
+                # genre["movies"].append(soup.find("div", class_ = "title-info-synopsis").text.strip())
+                # # genre["movies"].append(soup.find("div", class_ = "title-data-info-item item-starring").text.strip())
+                # info = soup.find_all("div", class_ = "title-info-metadata-wrapper")
+                # for i in info:
+                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-year").text.strip())
+                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-runtime").text.strip())
+
+            rs.append(genre)
+            genre = {
+                "title" : "",
+                "movies" : []
+            }
+        return  Response({"data" : rs})
+
+
+        

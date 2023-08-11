@@ -66,16 +66,52 @@ class Logout(APIView):
 class WeatherAPI(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        access_key = os.environ.get('METEUM_API_KEY')
+        rs = {
+            "main" : {
 
-        headers = {
-            'X-Meteum-API-Key': access_key
+            },
+            "more" : {
+                "title" : "More",
+                "data" : []
+            }
         }
+        url = "https://www.timeanddate.com/weather/vietnam/ho-chi-minh"
+        html  = requests.get(url)
+        soup = BeautifulSoup(html.text, 'html.parser')
+        rs["main"]["location"] = soup.find("h1", class_ = "headline-banner__title").text
+        content  = soup.find("section", class_= "bk-focus")
+        rs["main"]['icon'] = "https:"+content.find("img")["src"]
+        rs["main"]['temp'] = content.find("div", class_= "h2").text
+        rs["main"]['status'] = content.find_all("p")[0].text
+        rs["main"]['wind'] = content.find_all("p")[1].text.split("Forecast")[0]
+        rs["main"]["forecast"] = content.find_all("p")[1].find("span").text
+        
+        content  = soup.find("div", class_= "row pdflexi-b dashb")
+        rs["more"]["title"] = content.find("h2").text
+        table = content.find("table", id= "wt-5hr")
+        tr = table.find_all("tr")    
+        row = []    
+    
+        td = tr[0].find_all("td")
+        for j in td :
+            row.append(j.text)
+        rs["more"]["data"].append(row)
+        row = []
 
-        response_ = requests.get('https://api.meteum.ai/v1/forecast?lat=10.0452&lon=105.7469', headers=headers)
+        td = tr[1].find_all("td")
+        for j in td :
+            row.append("https:"+j.find("img")["src"])
+        rs["more"]["data"].append(row)
+        row = []
 
-        return Response({'data': response_.json()})
+        td = tr[2].find_all("td")
+        for j in td :
+            row.append(j.text)
+        rs["more"]["data"].append(row)
+        row = []
 
+        return  Response({"data" : rs})
+       
 class FoodAPI(APIView):
     permission_classes = [AllowAny]
 

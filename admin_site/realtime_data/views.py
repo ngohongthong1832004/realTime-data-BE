@@ -44,7 +44,7 @@ class Login(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        print(user)
+        # print(user)
         return Response({
             'token': token.key,
             'user_id': user.id,
@@ -157,19 +157,24 @@ class MusicAPI(APIView):
 
     def get(self, request, *args, **kwargs):
         rs = []
-        url = "https://www.nhaccuatui.com/"
-        html  = requests.get(url)
-        soup = BeautifulSoup(html.text, 'html.parser')
-        content  = soup.find("div", id = "top20-content")
-        item = content.find_all("li")
-        for i in item[:5]:
-            rs.append({
-                "name" : i.find("h3").text,
-                "href" : i.find("a")["href"],
-                "singer" : i.find("h4").text
-            })
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://www.billboard.com/charts/hot-100/"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        # print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        div = soup.find("div", class_ = "chart-results-list // lrv-u-padding-t-150 lrv-u-padding-t-050@mobile-max")
+        item = div.find_all("div", class_ = "o-chart-results-list-row-container")
+        music = {}
+        for i in item[:10]:
+            music["name"] = i.find("h3", id= "title-of-a-story").text.strip()
+            music["singer"] =  i.find("li", class_= "lrv-u-width-100p").find("li").find("span").text.strip()
+            music["image"] = i.find("img")["data-lazy-src"]
+            rs.append(music)
+            music = {}
 
-        return Response({"data" : rs})
+        return Response({
+            "data" : rs
+        })
 
 class NewsAPI(APIView):
     permission_classes = [AllowAny]
@@ -212,28 +217,85 @@ class BooksAPI(APIView):
 
     def get(self, request, *args, **kwargs):
         rs = []
-        url = "https://nhungcuonsachhay.com/trich-dan-hay/"
-        html  = requests.get(url)
-        soup = BeautifulSoup(html.text, 'html.parser')
-        content  = soup.find("div", id = "tab2")
-        item = content.find_all("li")
-        for i in item[:5]:
-            rs.append({
-                "name" : i.find("h3").text,
-                "href" : i.find("a")["href"],
-                "img" : i.find("img")["src"]
-            })
-        print(rs)
-        return  Response({"data" : rs})
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://www.whatshouldireadnext.com/"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        # print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        div = soup.find("div", class_ = "pages__home__genres__tiles")
+        item = div.find_all("a")
+        genres = {
+            "name" : "",
+            "data" : []
+        }
+        for i in item:
+            genres["name"] = i.text
+            url = "https://www.whatshouldireadnext.com/" + i["href"]
+            response = requests.get(url, verify=True) 
+            html = BeautifulSoup(response.text, 'html.parser')
+            lists = html.find("div", class_ = "book-category__books")
+            items = lists.find_all("div", class_ = "book-results__item")
+            for j in items[:5]:
+                genres["data"].append({
+                    "image" : j.find("img")["src"],
+                    "name" : j.find("h3", class_ = "book-results__title").text.strip(),
+                    "author" : j.find("h4", class_ = "book-results__author").text.strip(),
+                })
+
+            rs.append(genres)
+            genres = {
+                "name" : "",
+                "data" : []
+            }
+
+        return Response({
+            "data" : rs
+        })
 
 class MoviesAPI(APIView):
     permission_classes = [AllowAny]
-    def get(self, request):
-        return Response({"MySelf": {
-            "name": "Ngo Hong Thong",
-            "age": datetime.datetime.now().year - 2004,
-            "address": "HCM",
-        }})
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://www.netflix.com/vn-en/browse/genre/34399"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        # print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        genre = {
+            "title" : "",
+            "movies" : []
+        }
+
+        content  = soup.find_all("section", class_= "nm-collections-row")
+        for i in content[:-2]:
+            genre["title"] = i.find("h2", class_ = "nm-collections-row-name").text.strip().replace("Explore more", "")
+            content  = i.find("ul", class_= "nm-content-horizontal-row-item-container")
+            test  = content.find_all("li")
+            for i in test[1:6]:
+                genre['movies'].append({
+                    "name" : i.find("span", class_ = "nm-collections-title-name").text.strip(),
+                    "image" : i.find("img")["src"],
+                    "href" : i.find("a")["href"]
+                })
+                # detail = requests.get(i.find("a")["href"])
+                # soup = BeautifulSoup(detail.text, 'html.parser')
+                # genre["movies"].append(soup.find("div", class_ = "title-info-synopsis").text.strip())
+                # # genre["movies"].append(soup.find("div", class_ = "title-data-info-item item-starring").text.strip())
+                # info = soup.find_all("div", class_ = "title-info-metadata-wrapper")
+                # for i in info:
+                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-year").text.strip())
+                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-runtime").text.strip())
+
+            rs.append(genre)
+            genre = {
+                "title" : "",
+                "movies" : []
+            }
+        return  Response({"data" : rs})
+
+
+        
 
 class NumberLuckySouthAPI(APIView):
     permission_classes = [AllowAny]
@@ -243,7 +305,7 @@ class NumberLuckySouthAPI(APIView):
         ssl._create_default_https_context = ssl._create_unverified_context
         url = "https://ketquaveso.mobi/xsmn-6-8-2023.html"  # Replace this with your actual URL
         response = requests.get(url, verify=True) 
-        print(response.status_code)
+        # print(response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
         content  = soup.find("div", id= "load_kq_mn_0")
         test  = content.find_all("tr")
@@ -272,7 +334,7 @@ class NumberLuckyNorthAPI(APIView):
         ssl._create_default_https_context = ssl._create_unverified_context
         url = "https://ketquaveso.mobi/xsmb-8-8-2023.html"  # Replace this with your actual URL
         response = requests.get(url, verify=True) 
-        print(response.status_code)
+        # print(response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
         content  = soup.find("table", class_= "kqmb colgiai extendable")
         test  = content.find_all("tr")
@@ -347,41 +409,38 @@ class ScrapeDataView(APIView):
     def get(self, request, *args, **kwargs):
         rs = []
         ssl._create_default_https_context = ssl._create_unverified_context
-        url = "https://www.netflix.com/vn-en/browse/genre/34399"  # Replace this with your actual URL
+        url = "https://www.whatshouldireadnext.com/"  # Replace this with your actual URL
         response = requests.get(url, verify=True) 
-        print(response.status_code)
+        # print(response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
-        genre = {
-            "title" : "",
-            "movies" : []
+        div = soup.find("div", class_ = "pages__home__genres__tiles")
+        item = div.find_all("a")
+        genres = {
+            "name" : "",
+            "data" : []
         }
-
-        content  = soup.find_all("section", class_= "nm-collections-row")
-        for i in content[:-2]:
-            genre["title"] = i.find("h2", class_ = "nm-collections-row-name").text.strip()
-            content  = i.find("ul", class_= "nm-content-horizontal-row-item-container")
-            test  = content.find_all("li")
-            for i in test[1:]:
-                genre['movies'].append({
-                    "name" : i.find("span", class_ = "nm-collections-title-name").text.strip(),
-                    "image" : i.find("img")["src"],
-                    "href" : i.find("a")["href"]
+        for i in item:
+            genres["name"] = i.text
+            url = "https://www.whatshouldireadnext.com/" + i["href"]
+            response = requests.get(url, verify=True) 
+            html = BeautifulSoup(response.text, 'html.parser')
+            lists = html.find("div", class_ = "book-category__books")
+            items = lists.find_all("div", class_ = "book-results__item")
+            for j in items[:5]:
+                genres["data"].append({
+                    "image" : j.find("img")["src"],
+                    "name" : j.find("h3", class_ = "book-results__title").text.strip(),
+                    "author" : j.find("h4", class_ = "book-results__author").text.strip(),
                 })
-                # detail = requests.get(i.find("a")["href"])
-                # soup = BeautifulSoup(detail.text, 'html.parser')
-                # genre["movies"].append(soup.find("div", class_ = "title-info-synopsis").text.strip())
-                # # genre["movies"].append(soup.find("div", class_ = "title-data-info-item item-starring").text.strip())
-                # info = soup.find_all("div", class_ = "title-info-metadata-wrapper")
-                # for i in info:
-                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-year").text.strip())
-                #     genre["movies"].append(i.find("span", class_ = "title-info-metadata-item item-runtime").text.strip())
 
-            rs.append(genre)
-            genre = {
-                "title" : "",
-                "movies" : []
+            rs.append(genres)
+            genres = {
+                "name" : "",
+                "data" : []
             }
-        return  Response({"data" : rs})
 
+        return Response({
+            "data" : rs
+        })
 
         

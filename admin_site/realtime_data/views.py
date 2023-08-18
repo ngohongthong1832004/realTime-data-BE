@@ -15,6 +15,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import ssl
 import datetime
+import random
+
 
 
 import os
@@ -212,6 +214,34 @@ class NewsAPI(APIView):
 
         return Response({"data" : rs})
 
+class TravelAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        rs = []
+        ssl._create_default_https_context = ssl._create_unverified_context
+        url = "https://www.harpersbazaar.com/culture/travel-dining/g7171/most-beautiful-places-in-the-world/"  # Replace this with your actual URL
+        response = requests.get(url, verify=True) 
+        # print(response.status_code)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        sections = soup.find_all("div", class_ = "css-5htnuj e1tmud0h10")
+        # print(len(sections))
+        for i in sections:
+            rs.append({
+                "image" : i.find("img")["src"],
+                "title" : i.find("h2", class_ = "css-1euv19 e1tmud0h8").text.strip(),
+                "content" : i.find("p", class_ = "css-aeyldl et3p2gv0").text.strip()
+            })
+
+        # get random 5 items
+        random.shuffle(rs)
+        rs = rs[:4]
+
+        return Response({
+            "data" : rs
+        })
+
+
 class BooksAPI(APIView):
     permission_classes = [AllowAny]
 
@@ -235,7 +265,7 @@ class BooksAPI(APIView):
             html = BeautifulSoup(response.text, 'html.parser')
             lists = html.find("div", class_ = "book-category__books")
             items = lists.find_all("div", class_ = "book-results__item")
-            for j in items[:5]:
+            for j in items[:6]:
                 genres["data"].append({
                     "image" : j.find("img")["src"],
                     "name" : j.find("h3", class_ = "book-results__title").text.strip(),
@@ -366,7 +396,7 @@ class PriceGoldAPI(APIView):
             td = i.find_all("td")
             row = []           
             for j in td:
-                row.append(j.text.strip())
+                row.append(j.text.strip().split("\n")[0])
             rs.append(row)
             row = []
         # print(rs)
@@ -409,35 +439,22 @@ class ScrapeDataView(APIView):
     def get(self, request, *args, **kwargs):
         rs = []
         ssl._create_default_https_context = ssl._create_unverified_context
-        url = "https://www.whatshouldireadnext.com/"  # Replace this with your actual URL
+        url = "https://www.harpersbazaar.com/culture/travel-dining/g7171/most-beautiful-places-in-the-world/"  # Replace this with your actual URL
         response = requests.get(url, verify=True) 
         # print(response.status_code)
         soup = BeautifulSoup(response.text, 'html.parser')
-        div = soup.find("div", class_ = "pages__home__genres__tiles")
-        item = div.find_all("a")
-        genres = {
-            "name" : "",
-            "data" : []
-        }
-        for i in item:
-            genres["name"] = i.text
-            url = "https://www.whatshouldireadnext.com/" + i["href"]
-            response = requests.get(url, verify=True) 
-            html = BeautifulSoup(response.text, 'html.parser')
-            lists = html.find("div", class_ = "book-category__books")
-            items = lists.find_all("div", class_ = "book-results__item")
-            for j in items[:5]:
-                genres["data"].append({
-                    "image" : j.find("img")["src"],
-                    "name" : j.find("h3", class_ = "book-results__title").text.strip(),
-                    "author" : j.find("h4", class_ = "book-results__author").text.strip(),
-                })
+        sections = soup.find_all("div", class_ = "css-5htnuj e1tmud0h10")
+        # print(len(sections))
+        for i in sections:
+            rs.append({
+                "image" : i.find("img")["src"],
+                "title" : i.find("h2", class_ = "css-1euv19 e1tmud0h8").text.strip(),
+                "content" : i.find("p", class_ = "css-aeyldl et3p2gv0").text.strip()
+            })
 
-            rs.append(genres)
-            genres = {
-                "name" : "",
-                "data" : []
-            }
+        # get random 5 items
+        random.shuffle(rs)
+        rs = rs[:2]
 
         return Response({
             "data" : rs

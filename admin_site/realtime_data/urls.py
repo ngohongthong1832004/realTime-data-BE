@@ -15,6 +15,8 @@ urlpatterns = [
     path("musics/", MusicAPI.as_view(), name="music"),
     path("movies/", MoviesAPI.as_view(), name="movies"),
     path("books/", BooksAPI.as_view(), name="books"),
+    path("travels/", TravelAPI.as_view(), name="travel"),
+
 
     path("number-lucky-south/", NumberLuckySouthAPI.as_view(), name="number-lucky"),
     path("number-lucky-north/", NumberLuckyNorthAPI.as_view(), name="number-lucky"),

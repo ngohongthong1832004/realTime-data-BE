@@ -132,6 +132,7 @@ class FoodAPI(APIView):
                     "image" : i.find('img')["data-src"]
                 }
                 rs["breakfast"].append(food)
+        # print(rs)
 
         url = "https://yummly2.p.rapidapi.com/feeds/list"
         querystring = {"limit":"5","start":"0"}
@@ -140,7 +141,11 @@ class FoodAPI(APIView):
             "X-RapidAPI-Host": "yummly2.p.rapidapi.com"
         }
         response = requests.get(url, headers=headers, params=querystring)
-        return Response({'data': response.json() if datetime.datetime.now().hour > 9 else rs})  
+        # return Response({'data': response.json() if datetime.datetime.now().hour > 9 else rs})  
+        return Response({'data': {
+            "data" : response.json(),
+            "breakfast" : rs
+        }})  
     
 class QuotesAPI(APIView):
     permission_classes = [AllowAny]

@@ -153,7 +153,7 @@ class QuotesAPI(APIView):
         url = "https://random-quote-api3.p.rapidapi.com/"
 
         headers = {
-            "X-RapidAPI-Key": os.environ.get('X-RapidAPI-Key'),
+            "X-RapidAPI-Key": os.environ.get('X_RapidAPI_Key'),
             "X-RapidAPI-Host": "random-quote-api3.p.rapidapi.com"
         }
 
